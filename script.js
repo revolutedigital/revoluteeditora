@@ -172,27 +172,26 @@
         `Telefone: ${telefone}`,
       ].join('\n');
 
-      fetch('https://api.web3forms.com/submit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        keepalive: true,
-        body: JSON.stringify({
-          access_key: WEB3FORMS_ACCESS_KEY,
-          subject: 'Novo contato — LP Editora Revolute',
-          from_name: 'LP Editora Revolute',
-          nome,
-          email,
-          telefone,
-        }),
-      })
-        .then((response) => response.json())
-        .then((data) => {
-          // TEMPORÁRIO: log de diagnóstico enquanto validamos a integração com o Web3Forms.
-          console.log('[Web3Forms] resposta:', data);
-        })
-        .catch((error) => {
-          console.error('[Web3Forms] falha no envio:', error);
+      // Web3Forms bloqueia submissões vindas de subdomínios genéricos de hosting
+      // (ex: *.up.railway.app) como proteção antispam — volta a funcionar assim
+      // que o site estiver em domínio próprio. Até lá, WhatsApp é o único canal.
+      if (!/\.railway\.app$/.test(window.location.hostname)) {
+        fetch('https://api.web3forms.com/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          keepalive: true,
+          body: JSON.stringify({
+            access_key: WEB3FORMS_ACCESS_KEY,
+            subject: 'Novo contato — LP Editora Revolute',
+            from_name: 'LP Editora Revolute',
+            nome,
+            email,
+            telefone,
+          }),
+        }).catch(() => {
+          // Envio por e-mail é best-effort; o WhatsApp continua sendo o canal principal.
         });
+      }
 
       const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(mensagem)}`;
       window.open(whatsappUrl, '_blank', 'noopener');
