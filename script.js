@@ -92,8 +92,11 @@
     }
     requestAnimationFrame(step);
 
-    galleryWrap.addEventListener('mouseenter', () => { autoplayPaused = true; });
-    galleryWrap.addEventListener('mouseleave', () => { autoplayPaused = false; isDragging = false; });
+    const supportsHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+    if (supportsHover) {
+      galleryWrap.addEventListener('mouseenter', () => { autoplayPaused = true; });
+      galleryWrap.addEventListener('mouseleave', () => { autoplayPaused = false; isDragging = false; });
+    }
 
     galleryWrap.addEventListener('pointerdown', (event) => {
       isDragging = true;
