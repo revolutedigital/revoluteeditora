@@ -2,6 +2,7 @@
   'use strict';
 
   const WHATSAPP_NUMBER = '5515981828332';
+  const WEB3FORMS_ACCESS_KEY = 'b753e3a9-0941-4180-b358-277db7dc6221';
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   /* ---------- Loading screen ---------- */
@@ -170,6 +171,21 @@
         `E-mail: ${email}`,
         `Telefone: ${telefone}`,
       ].join('\n');
+
+      fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({
+          access_key: WEB3FORMS_ACCESS_KEY,
+          subject: 'Novo contato — LP Editora Revolute',
+          from_name: 'LP Editora Revolute',
+          nome,
+          email,
+          telefone,
+        }),
+      }).catch(() => {
+        // Envio por e-mail é best-effort; o WhatsApp continua sendo o canal principal.
+      });
 
       const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(mensagem)}`;
       window.open(whatsappUrl, '_blank', 'noopener');
