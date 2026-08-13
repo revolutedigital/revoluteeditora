@@ -175,6 +175,7 @@
       fetch('https://api.web3forms.com/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        keepalive: true,
         body: JSON.stringify({
           access_key: WEB3FORMS_ACCESS_KEY,
           subject: 'Novo contato — LP Editora Revolute',
