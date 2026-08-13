@@ -184,9 +184,15 @@
           email,
           telefone,
         }),
-      }).catch(() => {
-        // Envio por e-mail é best-effort; o WhatsApp continua sendo o canal principal.
-      });
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          // TEMPORÁRIO: log de diagnóstico enquanto validamos a integração com o Web3Forms.
+          console.log('[Web3Forms] resposta:', data);
+        })
+        .catch((error) => {
+          console.error('[Web3Forms] falha no envio:', error);
+        });
 
       const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(mensagem)}`;
       window.open(whatsappUrl, '_blank', 'noopener');
