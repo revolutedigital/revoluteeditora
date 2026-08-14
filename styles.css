@@ -478,8 +478,13 @@ blockquote.pull {
   border-radius: var(--radius-xl);
   padding: clamp(28px, 4vw, 40px);
 }
-.price-card .price { font-size: 40px; font-weight: 800; color: var(--text); margin: 8px 0 12px; }
-.price-card p { color: #5C3A00; font-size: 14px; line-height: 1.6; margin: 0 0 20px; }
+.price-card-list { list-style: none; margin: 16px 0 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.price-card-list li { color: #5C3A00; font-size: 14.5px; font-weight: 600; padding-left: 22px; position: relative; }
+.price-card-list li::before { content: ''; position: absolute; left: 0; top: 7px; width: 6px; height: 6px; border-radius: 50%; background: var(--orange); }
+
+/* ---------- Quem somos ---------- */
+.quem-somos { text-align: center; }
+.quem-somos .lede { max-width: 640px; margin: 0 auto; }
 
 /* ---------- Coragi gallery ---------- */
 #coragi { overflow-x: hidden; }
