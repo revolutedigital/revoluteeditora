@@ -1,11 +1,35 @@
 'use strict';
 
+const fs = require('fs');
 const path = require('path');
 const express = require('express');
 const nodemailer = require('nodemailer');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Railway (e a maioria dos PaaS) termina o SSL na borda e repassa pro app
+// por HTTP interno — sem isso, req.protocol sempre voltaria "http", errando
+// o canonical/OG em produção mesmo com o site servido via HTTPS.
+app.set('trust proxy', true);
+
+// Domínios genéricos de hosting (ex: Railway) não devem ser indexados pelo
+// Google — evita conteúdo duplicado quando o site migrar pro domínio final.
+// A checagem é por host da requisição, então liga/desliga sozinha na migração.
+function isTemporaryHost(hostname) {
+  return /\.railway\.app$/.test(hostname);
+}
+
+const indexTemplate = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
+
+function renderIndex(req) {
+  const siteUrl = `${req.protocol}://${req.get('host')}`;
+  const indexable = !isTemporaryHost(req.hostname);
+  const robotsContent = indexable ? 'index, follow' : 'noindex, nofollow';
+  return indexTemplate
+    .replace(/{{SITE_URL}}/g, siteUrl)
+    .replace(/{{ROBOTS_CONTENT}}/g, robotsContent);
+}
 
 const SMTP_HOST = process.env.SMTP_HOST || 'smtp.gmail.com';
 const SMTP_PORT = Number(process.env.SMTP_PORT || 465);
@@ -37,7 +61,41 @@ if (!mailerReady) {
 }
 
 app.use(express.json());
-app.use(express.static(path.join(__dirname), { extensions: ['html'] }));
+
+app.get(['/', '/index.html'], (req, res) => {
+  res.type('html').send(renderIndex(req));
+});
+
+app.get('/robots.txt', (req, res) => {
+  const siteUrl = `${req.protocol}://${req.get('host')}`;
+  const body = isTemporaryHost(req.hostname)
+    ? 'User-agent: *\nDisallow: /\n'
+    : `User-agent: *\nAllow: /\n\nSitemap: ${siteUrl}/sitemap.xml\n`;
+  res.type('text/plain').send(body);
+});
+
+app.get('/sitemap.xml', (req, res) => {
+  if (isTemporaryHost(req.hostname)) {
+    res.status(404).end();
+    return;
+  }
+  const siteUrl = `${req.protocol}://${req.get('host')}`;
+  const body = [
+    '<?xml version="1.0" encoding="UTF-8"?>',
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+    '  <url>',
+    `    <loc>${siteUrl}/</loc>`,
+    '    <changefreq>weekly</changefreq>',
+    '    <priority>1.0</priority>',
+    '  </url>',
+    '</urlset>',
+  ].join('\n');
+  res.type('application/xml').send(body);
+});
+
+// index:false porque a home já tem rota própria acima (com canonical/robots
+// dinâmicos); sem isso o static tentaria servir o index.html cru pra "/".
+app.use(express.static(path.join(__dirname), { extensions: ['html'], index: false }));
 
 app.post('/api/contato', async (req, res) => {
   if (!mailerReady) {
