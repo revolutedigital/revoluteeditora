@@ -165,7 +165,7 @@
       formError.setAttribute('hidden', '');
 
       const mensagem = [
-        'Olá! Quero conversar sobre publicar meu livro com a Revolute.',
+        'Olá! Quero conversar sobre publicar meu livro com a Editora Revolute.',
         `Nome: ${nome}`,
         `E-mail: ${email}`,
         `Telefone: ${telefone}`,
