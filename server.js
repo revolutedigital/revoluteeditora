@@ -114,20 +114,20 @@ app.post('/api/contato', async (req, res) => {
 
   try {
     await transporter.sendMail({
-      from: `"LP Editora Revolute" <${SMTP_USER}>`,
+      from: `"LP História vira Livro" <${SMTP_USER}>`,
       to: MAIL_TO,
       cc: MAIL_CC.length ? MAIL_CC : undefined,
       replyTo: email,
-      subject: 'Novo contato — LP Editora Revolute',
+      subject: 'Novo contato — LP História vira Livro (Editora Revolute)',
       text: [
-        'Novo contato recebido pelo formulário da LP da Editora Revolute.',
+        'Novo contato recebido pelo formulário "Sua história vira livro" da Editora Revolute.',
         '',
         `Nome: ${nome}`,
         `E-mail: ${email}`,
         `Telefone: ${telefone}`,
       ].join('\n'),
       html: `
-        <p>Novo contato recebido pelo formulário da LP da Editora Revolute.</p>
+        <p>Novo contato recebido pelo formulário "Sua história vira livro" da Editora Revolute.</p>
         <ul>
           <li><strong>Nome:</strong> ${escapeHtml(nome)}</li>
           <li><strong>E-mail:</strong> ${escapeHtml(email)}</li>

@@ -13,7 +13,7 @@
       document.body.style.overflow = 'hidden';
       const wordEl = loader.querySelector('[data-loader-word]');
       const fillEl = loader.querySelector('[data-loader-fill]');
-      const words = ['Escrever', 'Editar', 'Publicar'];
+      const words = ['Contar', 'Escrever', 'Publicar'];
 
       let wordIndex = 0;
       const wordTimer = window.setInterval(() => {
@@ -165,7 +165,7 @@
       formError.setAttribute('hidden', '');
 
       const mensagem = [
-        'Olá! Quero conversar sobre publicar meu livro com a Editora Revolute.',
+        'Olá! Quero contar minha história e transformar em livro com a Editora Revolute.',
         `Nome: ${nome}`,
         `E-mail: ${email}`,
         `Telefone: ${telefone}`,

@@ -2,7 +2,7 @@
   "name": "revolute-editora-lp",
   "version": "1.0.0",
   "private": true,
-  "description": "Landing page institucional da Editora Revolute, com envio de contato por e-mail.",
+  "description": "LP da Editora Revolute pra quem não tem manuscrito: entrevista, redação, design, registro e lançamento. Envio de contato por e-mail.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
