@@ -20,6 +20,18 @@ function isTemporaryHost(hostname) {
   return /\.railway\.app$/.test(hostname);
 }
 
+// www.editorarevolute.com.br e editorarevolute.com.br respondem os dois,
+// então sem isso o Google via as duas versões como páginas duplicadas
+// (cada uma se autodeclarando canônica). Domínio sem "www" é a versão
+// oficial (decisão do Igor) — "www" só redireciona (301) pra ela.
+app.use((req, res, next) => {
+  if (req.hostname === 'www.editorarevolute.com.br') {
+    res.redirect(301, `${req.protocol}://editorarevolute.com.br${req.originalUrl}`);
+    return;
+  }
+  next();
+});
+
 const indexTemplate = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
 
 function renderIndex(req) {
