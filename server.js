@@ -105,9 +105,14 @@ app.get('/sitemap.xml', (req, res) => {
   res.type('application/xml').send(body);
 });
 
+// Assets/ (capas, fontes, logos) quase nunca muda depois de publicado —
+// cache longo direto no navegador ajuda LCP em visitas repetidas.
+app.use('/Assets', express.static(path.join(__dirname, 'Assets'), { maxAge: '7d', immutable: true }));
+
 // index:false porque a home já tem rota própria acima (com canonical/robots
 // dinâmicos); sem isso o static tentaria servir o index.html cru pra "/".
-app.use(express.static(path.join(__dirname), { extensions: ['html'], index: false }));
+// maxAge curto aqui (CSS/JS mudam com mais frequência que os Assets acima).
+app.use(express.static(path.join(__dirname), { extensions: ['html'], index: false, maxAge: '1h' }));
 
 app.post('/api/contato', async (req, res) => {
   if (!mailerReady) {
