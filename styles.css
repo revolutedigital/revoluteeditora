@@ -572,13 +572,15 @@ blockquote.pull {
 .bio-page {
   position: relative;
   z-index: 1;
-  min-height: 100vh;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: clamp(28px, 5vw, 40px);
-  padding: clamp(32px, 8vw, 64px) clamp(20px, 6vw, 40px);
+  padding: clamp(24px, 8vw, 64px) clamp(20px, 6vw, 40px);
 }
 .bio-logo { height: clamp(36px, 6vw, 48px); width: auto; }
 .bio-buttons {
@@ -594,7 +596,15 @@ blockquote.pull {
 @media (hover: none) and (pointer: coarse) {
   .bio-call { display: inline-flex; }
 }
-.bio-footer { color: var(--text-muted); font-size: 12.5px; text-align: center; }
+.bio-footer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 10vh;
+  color: var(--text-muted);
+  font-size: 12.5px;
+  text-align: center;
+}
 .modal-overlay {
   position: fixed; inset: 0; z-index: var(--z-modal);
   background: rgba(36, 28, 20, .35);
