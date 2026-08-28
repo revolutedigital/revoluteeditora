@@ -33,12 +33,13 @@ app.use((req, res, next) => {
 });
 
 const indexTemplate = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
+const bioTemplate = fs.readFileSync(path.join(__dirname, 'bio.html'), 'utf8');
 
-function renderIndex(req) {
+function renderTemplate(template, req) {
   const siteUrl = `${req.protocol}://${req.get('host')}`;
   const indexable = !isTemporaryHost(req.hostname);
   const robotsContent = indexable ? 'index, follow' : 'noindex, nofollow';
-  return indexTemplate
+  return template
     .replace(/{{SITE_URL}}/g, siteUrl)
     .replace(/{{ROBOTS_CONTENT}}/g, robotsContent);
 }
@@ -75,7 +76,13 @@ if (!mailerReady) {
 app.use(express.json());
 
 app.get(['/', '/index.html'], (req, res) => {
-  res.type('html').send(renderIndex(req));
+  res.type('html').send(renderTemplate(indexTemplate, req));
+});
+
+// Página de links (cartão de visita digital) — não entra no sitemap.xml de
+// propósito: é uma página de utilidade, não conteúdo pra competir em busca.
+app.get(['/bio', '/bio.html'], (req, res) => {
+  res.type('html').send(renderTemplate(bioTemplate, req));
 });
 
 app.get('/robots.txt', (req, res) => {
