@@ -578,9 +578,9 @@ blockquote.pull {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: clamp(28px, 5vw, 40px);
-  padding: clamp(24px, 8vw, 64px) clamp(20px, 6vw, 40px);
+  padding: 15vh clamp(20px, 6vw, 40px) clamp(24px, 8vw, 64px);
 }
 .bio-logo { height: clamp(36px, 6vw, 48px); width: auto; }
 .bio-buttons {
