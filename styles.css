@@ -596,6 +596,9 @@ blockquote.pull {
 @media (hover: none) and (pointer: coarse) {
   .bio-call { display: inline-flex; }
 }
+@media (max-width: 640px) {
+  .bio-page { padding-top: 10vh; }
+}
 .bio-footer {
   position: absolute;
   left: 0;
