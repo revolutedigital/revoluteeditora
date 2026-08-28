@@ -35,13 +35,19 @@ app.use((req, res, next) => {
 const indexTemplate = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
 const bioTemplate = fs.readFileSync(path.join(__dirname, 'bio.html'), 'utf8');
 
+// Muda a cada deploy (o processo reinicia no Railway), então vira query
+// string nos links de CSS/JS (?v=...) — invalida cache da Cloudflare e do
+// navegador automaticamente a cada atualização, sem precisar de purge manual.
+const ASSET_VERSION = Date.now();
+
 function renderTemplate(template, req) {
   const siteUrl = `${req.protocol}://${req.get('host')}`;
   const indexable = !isTemporaryHost(req.hostname);
   const robotsContent = indexable ? 'index, follow' : 'noindex, nofollow';
   return template
     .replace(/{{SITE_URL}}/g, siteUrl)
-    .replace(/{{ROBOTS_CONTENT}}/g, robotsContent);
+    .replace(/{{ROBOTS_CONTENT}}/g, robotsContent)
+    .replace(/{{ASSET_VERSION}}/g, ASSET_VERSION);
 }
 
 const SMTP_HOST = process.env.SMTP_HOST || 'smtp.gmail.com';
