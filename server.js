@@ -36,6 +36,7 @@ app.use((req, res, next) => {
 
 const indexTemplate = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
 const bioTemplate = fs.readFileSync(path.join(__dirname, 'bio.html'), 'utf8');
+const privacidadeTemplate = fs.readFileSync(path.join(__dirname, 'privacidade.html'), 'utf8');
 
 // Muda a cada deploy (o processo reinicia no Railway), então vira query
 // string nos links de CSS/JS (?v=...) — invalida cache da Cloudflare e do
@@ -104,6 +105,11 @@ app.get(['/bio', '/bio.html'], (req, res) => {
   res.type('html').send(renderTemplate(bioTemplate, req));
 });
 
+// Política de privacidade: é a página que o modal do site e o formulário de anúncios da Meta apontam.
+app.get(['/privacidade', '/privacidade.html'], (req, res) => {
+  res.type('html').send(renderTemplate(privacidadeTemplate, req));
+});
+
 app.get('/robots.txt', (req, res) => {
   const siteUrl = `${req.protocol}://${req.get('host')}`;
   const body = isTemporaryHost(req.hostname)
@@ -125,6 +131,11 @@ app.get('/sitemap.xml', (req, res) => {
     `    <loc>${siteUrl}/</loc>`,
     '    <changefreq>weekly</changefreq>',
     '    <priority>1.0</priority>',
+    '  </url>',
+    '  <url>',
+    `    <loc>${siteUrl}/privacidade</loc>`,
+    '    <changefreq>yearly</changefreq>',
+    '    <priority>0.2</priority>',
     '  </url>',
     '</urlset>',
   ].join('\n');

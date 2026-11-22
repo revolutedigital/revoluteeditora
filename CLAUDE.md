@@ -14,7 +14,7 @@ CTA único: **"Quero contar minha história"** (e variações) abre um modal com
 1. dispara `POST /api/contato` sem esperar resposta (`keepalive`), que manda e-mail via SMTP;
 2. abre o WhatsApp `5515981828332` com os dados preenchidos. **O WhatsApp é o canal principal**; o e-mail é só cópia.
 
-`/bio` ([bio.html](bio.html)) é o cartão de visita digital (link do Instagram `@editora_revolute`), com WhatsApp, telefone, site, e-mail e Instagram. Fica fora do sitemap de propósito.
+`/bio` ([bio.html](bio.html)) é o cartão de visita digital (link do Instagram `@revolute_editora`), com WhatsApp, telefone, site, e-mail e Instagram. Fica fora do sitemap de propósito.
 
 ## Stack
 - Node ≥18 + Express 4 ([server.js](server.js)) e Nodemailer. Sem banco, sem build, sem framework front: HTML, CSS e JS puros.
@@ -30,6 +30,8 @@ CTA único: **"Quero contar minha história"** (e variações) abre um modal com
 - [tracking.js](tracking.js) guarda UTMs e ids de clique (primeiro e último toque, 90 dias, `localStorage`) e monta o `fbc` quando o Pixel ainda não gravou o cookie. As UTMs seguem no e-mail do lead ("Origem do clique"); o texto do WhatsApp não leva UTM.
 - Teste: `npm test` (lógica da Meta). Validar de verdade: `META_TEST_EVENT_CODE` + aba "Eventos de teste" do dataset, conferindo que Pixel e servidor aparecem com o mesmo event_id e "Desduplicado".
 - UTM dos anúncios: `utm_source=meta&utm_medium=paid_social&utm_campaign={{campaign.name}}&utm_content={{ad.name}}` (minúsculas, sem espaço nem acento).
+
+- **Privacidade:** `/privacidade` ([privacidade.html](privacidade.html), template como a home) é a política que o modal, o rodapé e o formulário de anúncios da Meta apontam. O modal tem uma linha de ciência acima do botão; não é caixa de marcar de propósito (atrito no mobile).
 
 ## Rodar local
 ```bash
