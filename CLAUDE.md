@@ -24,6 +24,13 @@ CTA único: **"Quero contar minha história"** (e variações) abre um modal com
 - Fonte Hellix self-hosted (`Assets/Fonts`). Paleta em tokens no `:root` de [styles.css](styles.css) (âmbar `#FFC72C`, laranja `#C45500`, fundo creme `#FFFCF6`). Um CSS só, compartilhado entre `/` e `/bio`. Cuidado com seletor global (`nav` já causou colisão na /bio, ver `fca40b2`).
 - SEO: `robots.txt` e `sitemap.xml` são gerados no server. Host `*.railway.app` recebe `noindex` automaticamente. JSON-LD `Organization` + `Service` no `<head>` da home.
 
+## Rastreio (Meta)
+- **Pixel** no `<head>` de `/` e `/bio` (placeholder `{{META_PIXEL}}`, preenchido pelo server): `PageView`. **Lead** dispara em [script.js](script.js) no submit do modal, depois da validação (nunca no clique que abre o modal), com `eventID`.
+- **Conversions API**: o mesmo `eventId` vai no `POST /api/contato`; [meta.js](meta.js) monta o `Lead` com e-mail, telefone (DDI 55), nome em SHA-256, `fbp`, `fbc`, IP (`cf-connecting-ip`) e user agent, e envia ao Graph. A Meta junta Pixel e API pelo `event_id` e conta um lead só. E-mail e Meta são independentes: um fora do ar não derruba o outro.
+- [tracking.js](tracking.js) guarda UTMs e ids de clique (primeiro e último toque, 90 dias, `localStorage`) e monta o `fbc` quando o Pixel ainda não gravou o cookie. As UTMs seguem no e-mail do lead ("Origem do clique"); o texto do WhatsApp não leva UTM.
+- Teste: `npm test` (lógica da Meta). Validar de verdade: `META_TEST_EVENT_CODE` + aba "Eventos de teste" do dataset, conferindo que Pixel e servidor aparecem com o mesmo event_id e "Desduplicado".
+- UTM dos anúncios: `utm_source=meta&utm_medium=paid_social&utm_campaign={{campaign.name}}&utm_content={{ad.name}}` (minúsculas, sem espaço nem acento).
+
 ## Rodar local
 ```bash
 npm install
@@ -32,7 +39,7 @@ npm start        # http://localhost:3000
 Sem as variáveis SMTP, `/api/contato` responde 503 e o resto funciona normalmente.
 
 ## Deploy e variáveis
-Railway, com deploy pelo push no GitHub (`npm start`). Variáveis: `SMTP_USER`, `SMTP_PASS`, `MAIL_TO` (obrigatórias pro e-mail), `MAIL_CC` (lista separada por vírgula), `SMTP_HOST`/`SMTP_PORT`/`SMTP_SECURE` (padrão Gmail 465). `trust proxy` está ligado porque o Railway termina o SSL na borda. Não remover.
+Railway, com deploy pelo push no GitHub (`npm start`). Variáveis: `SMTP_USER`, `SMTP_PASS`, `MAIL_TO` (obrigatórias pro e-mail), `MAIL_CC` (lista separada por vírgula), `SMTP_HOST`/`SMTP_PORT`/`SMTP_SECURE` (padrão Gmail 465). Rastreio da Meta: `META_PIXEL_ID` (id do dataset/pixel "Revolute Editora", público) e `META_CAPI_TOKEN` (token do dataset gerado no Gerenciador de Eventos; segredo, só no Railway), opcional `META_TEST_EVENT_CODE` (aba "Eventos de teste": manda o Lead como teste). Sem `META_PIXEL_ID` a página sai sem pixel; sem `META_CAPI_TOKEN` o Lead vai só pelo Pixel. `trust proxy` está ligado porque o Railway termina o SSL na borda. Não remover.
 
 ## Regras do projeto
 - Mobile-first (390px). A maior parte do tráfego vem de Instagram e WhatsApp.

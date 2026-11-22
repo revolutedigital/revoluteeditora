@@ -171,11 +171,19 @@
         `Telefone: ${telefone}`,
       ].join('\n');
 
+      // Lead: o Pixel e a Conversions API recebem o mesmo eventID, então a Meta conta um lead só. Dispara aqui, depois da
+      // validação e junto do envio, e não no clique do botão que abre o modal.
+      const rastro = window.RevTrack ? window.RevTrack.contexto() : {};
+      const eventId = window.RevTrack ? window.RevTrack.novoEventId() : null;
+      if (eventId && typeof window.fbq === 'function') {
+        window.fbq('track', 'Lead', { content_name: 'Livro sob medida' }, { eventID: eventId });
+      }
+
       fetch('/api/contato', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         keepalive: true,
-        body: JSON.stringify({ nome, email, telefone }),
+        body: JSON.stringify({ nome, email, telefone, eventId, ...rastro }),
       }).catch(() => {
         // Envio por e-mail é best-effort; o WhatsApp continua sendo o canal principal.
       });
