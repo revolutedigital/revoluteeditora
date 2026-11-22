@@ -5,7 +5,8 @@
   "description": "LP da Editora Revolute pra quem não tem manuscrito: entrevista, redação, design, registro e lançamento. Envio de contato por e-mail.",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "node --test"
   },
   "engines": {
     "node": ">=18"

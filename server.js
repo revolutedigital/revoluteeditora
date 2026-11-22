@@ -5,6 +5,8 @@ const path = require('path');
 const express = require('express');
 const nodemailer = require('nodemailer');
 
+const { montarEventoLead, enviarEvento } = require('./meta');
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -40,6 +42,16 @@ const bioTemplate = fs.readFileSync(path.join(__dirname, 'bio.html'), 'utf8');
 // navegador automaticamente a cada atualização, sem precisar de purge manual.
 const ASSET_VERSION = Date.now();
 
+// Pixel da Meta: o id (público) vem do Railway; sem ele a página sai sem pixel, e o envio server-side também fica desligado.
+const META_PIXEL_ID = /^\d{10,20}$/.test(process.env.META_PIXEL_ID || '') ? process.env.META_PIXEL_ID : null;
+const META_CAPI_TOKEN = process.env.META_CAPI_TOKEN || null;
+const META_TEST_EVENT_CODE = process.env.META_TEST_EVENT_CODE || null;
+const metaPixelSnippet = META_PIXEL_ID
+  ? `<script>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','${META_PIXEL_ID}');fbq('track','PageView');</script>\n<noscript><img height="1" width="1" style="display:none" alt="" src="https://www.facebook.com/tr?id=${META_PIXEL_ID}&ev=PageView&noscript=1"></noscript>`
+  : '';
+if (!META_PIXEL_ID) console.warn('[meta] META_PIXEL_ID não configurado — página sem Pixel e sem Conversions API.');
+else if (!META_CAPI_TOKEN) console.warn('[meta] META_CAPI_TOKEN não configurado — Lead só pelo Pixel (sem Conversions API).');
+
 function renderTemplate(template, req) {
   const siteUrl = `${req.protocol}://${req.get('host')}`;
   const indexable = !isTemporaryHost(req.hostname);
@@ -47,6 +59,7 @@ function renderTemplate(template, req) {
   return template
     .replace(/{{SITE_URL}}/g, siteUrl)
     .replace(/{{ROBOTS_CONTENT}}/g, robotsContent)
+    .replace(/{{META_PIXEL}}/g, metaPixelSnippet)
     .replace(/{{ASSET_VERSION}}/g, ASSET_VERSION);
 }
 
@@ -127,21 +140,49 @@ app.use('/Assets', express.static(path.join(__dirname, 'Assets'), { maxAge: '7d'
 // maxAge curto aqui (CSS/JS mudam com mais frequência que os Assets acima).
 app.use(express.static(path.join(__dirname), { extensions: ['html'], index: false, maxAge: '1h' }));
 
-app.post('/api/contato', async (req, res) => {
-  if (!mailerReady) {
-    res.status(503).json({ ok: false, error: 'Envio de e-mail não configurado no servidor.' });
-    return;
-  }
+const texto = (valor, max = 200) => String(valor || '').trim().slice(0, max);
+const OPCOES_UTM = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'fbclid', 'gclid'];
 
-  const nome = String(req.body?.nome || '').trim();
-  const email = String(req.body?.email || '').trim();
-  const telefone = String(req.body?.telefone || '').trim();
+function origemDoLead(corpo) {
+  const ultimo = corpo?.utm && typeof corpo.utm === 'object' ? corpo.utm : {};
+  const primeiro = corpo?.utmFirst && typeof corpo.utmFirst === 'object' ? corpo.utmFirst : {};
+  const linhas = (rotulo, valores) => {
+    const itens = OPCOES_UTM.filter((chave) => texto(valores[chave])).map((chave) => `${chave}=${texto(valores[chave])}`);
+    return itens.length ? `${rotulo}: ${itens.join(' · ')}` : null;
+  };
+  return [
+    linhas('Último toque', ultimo),
+    linhas('Primeiro toque', primeiro),
+    texto(corpo?.referrer) ? `Referrer: ${texto(corpo.referrer)}` : null,
+  ].filter(Boolean);
+}
+
+app.post('/api/contato', async (req, res) => {
+  const nome = texto(req.body?.nome, 120);
+  const email = texto(req.body?.email, 160);
+  const telefone = texto(req.body?.telefone, 40);
 
   if (!nome || !email || !telefone) {
     res.status(400).json({ ok: false, error: 'Preencha nome, e-mail e telefone.' });
     return;
   }
+  const capiLigada = Boolean(META_PIXEL_ID && META_CAPI_TOKEN);
+  if (!mailerReady && !capiLigada) {
+    res.status(503).json({ ok: false, error: 'Envio de e-mail não configurado no servidor.' });
+    return;
+  }
 
+  // As duas saídas são independentes: e-mail fora do ar não pode perder o evento da Meta, e vice-versa.
+  const [email_, meta] = await Promise.all([enviarEmail({ nome, email, telefone, origem: origemDoLead(req.body) }), enviarLeadParaMeta(req, { nome, email, telefone })]);
+  if (!email_.ok && !meta.ok) {
+    res.status(502).json({ ok: false, error: 'Falha ao registrar o contato.', email: email_.ok, meta: meta.ok });
+    return;
+  }
+  res.json({ ok: true, email: email_.ok, meta: meta.ok });
+});
+
+async function enviarEmail({ nome, email, telefone, origem }) {
+  if (!mailerReady) return { ok: false };
   try {
     await transporter.sendMail({
       from: `"LP História vira Livro" <${SMTP_USER}>`,
@@ -155,6 +196,7 @@ app.post('/api/contato', async (req, res) => {
         `Nome: ${nome}`,
         `E-mail: ${email}`,
         `Telefone: ${telefone}`,
+        ...(origem.length ? ['', 'Origem do clique:', ...origem] : []),
       ].join('\n'),
       html: `
         <p>Novo contato recebido pelo formulário "Sua história vira livro" da Editora Revolute.</p>
@@ -163,14 +205,39 @@ app.post('/api/contato', async (req, res) => {
           <li><strong>E-mail:</strong> ${escapeHtml(email)}</li>
           <li><strong>Telefone:</strong> ${escapeHtml(telefone)}</li>
         </ul>
+        ${origem.length ? `<p><strong>Origem do clique:</strong></p><ul>${origem.map((linha) => `<li>${escapeHtml(linha)}</li>`).join('')}</ul>` : ''}
       `,
     });
-    res.json({ ok: true });
+    return { ok: true };
   } catch (error) {
     console.error('[contato] falha ao enviar e-mail:', error);
-    res.status(502).json({ ok: false, error: 'Falha ao enviar e-mail.' });
+    return { ok: false };
   }
-});
+}
+
+// Lead na Conversions API, com o mesmo event_id do Pixel do navegador (a Meta conta um só).
+async function enviarLeadParaMeta(req, { nome, email, telefone }) {
+  if (!META_PIXEL_ID || !META_CAPI_TOKEN) return { ok: false };
+  const siteUrl = `${req.protocol}://${req.get('host')}/`;
+  const evento = montarEventoLead({
+    eventId: req.body?.eventId,
+    agora: new Date(),
+    urlPadrao: siteUrl,
+    sourceUrl: req.body?.sourceUrl,
+    nome,
+    email,
+    telefone,
+    fbp: req.body?.fbp,
+    fbc: req.body?.fbc,
+    ip: req.get('cf-connecting-ip') || req.ip,
+    userAgent: req.get('user-agent'),
+  });
+  const retorno = await enviarEvento({ pixelId: META_PIXEL_ID, token: META_CAPI_TOKEN, testEventCode: META_TEST_EVENT_CODE }, evento);
+  // Sem dado pessoal no log: só o id do evento e o resultado.
+  if (retorno.ok) console.log('[meta] Lead enviado', { eventId: evento.event_id, teste: Boolean(META_TEST_EVENT_CODE) });
+  else console.error('[meta] Lead não enviado', { eventId: evento.event_id, status: retorno.status, erro: retorno.erro, passageira: retorno.passageira });
+  return retorno;
+}
 
 function escapeHtml(value) {
   return value
