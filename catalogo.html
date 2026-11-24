@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Catálogo de torres de livros — Editora Revolute</title>
+  <meta name="description" content="Catálogo de livros e brinquedos para torres de varejo, com preço de repasse, código de barras e dados fiscais por título.">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="/Assets/Marca/favicon.ico">
+  <link rel="apple-touch-icon" href="/Assets/Marca/apple-touch-icon.png">
+  <link rel="stylesheet" href="/catalogo.css?v={{ASSET_VERSION}}">
+</head>
+<body>
+  <header class="cat-topo">
+    <div class="cat-wrap cat-topo-in">
+      <img class="cat-logo" src="/Assets/Marca/Logotipo%20-%20Revolute%20Editora.png" alt="Editora Revolute" width="160" height="40">
+      <p class="cat-cliente" data-cliente hidden></p>
+    </div>
+  </header>
+
+  <main class="cat-wrap">
+    <section class="cat-intro">
+      <h1>Catálogo de torres de livros</h1>
+      <p>Escolha os títulos e as quantidades. Cada título é pedido a partir de <strong data-qtd-minima>10</strong> unidades. Os preços são de repasse e o preço de venda é uma sugestão: a loja define o final.</p>
+      <p class="cat-aviso" data-aviso-meta hidden></p>
+    </section>
+
+    <section class="cat-filtros" aria-label="Filtros">
+      <label class="cat-busca">
+        <span class="cat-sr">Buscar título, código de barras ou NCM</span>
+        <input type="search" data-busca placeholder="Buscar título ou código de barras" autocomplete="off">
+      </label>
+      <div class="cat-chips" data-chips role="tablist" aria-label="Categorias"></div>
+    </section>
+
+    <p class="cat-contagem" data-contagem aria-live="polite"></p>
+    <ul class="cat-grade" data-grade></ul>
+    <p class="cat-vazio" data-vazio hidden>Nenhum título encontrado. Tente outra busca ou categoria.</p>
+
+    <footer class="cat-rodape">
+      <p><strong>Dados fiscais.</strong> NCM e CFOP por título para emissão da nota. Livros têm imunidade tributária; brinquedos têm tributação normal e exigem selo do Inmetro. Confirme o enquadramento com a contabilidade da loja antes da compra.</p>
+      <p>Editora Revolute · Quantidade mínima e condições de entrega combinados no fechamento.</p>
+    </footer>
+  </main>
+
+  <div class="cat-barra" data-barra>
+    <div class="cat-wrap cat-barra-in">
+      <div class="cat-barra-resumo">
+        <strong data-barra-total>R$ 0,00</strong>
+        <span data-barra-itens>Nenhum item</span>
+        <div class="cat-progresso" data-progresso hidden><span data-progresso-barra></span></div>
+      </div>
+      <button type="button" class="cat-botao" data-abrir-pedido>Ver pedido</button>
+    </div>
+  </div>
+
+  <dialog class="cat-pedido" data-pedido aria-labelledby="cat-pedido-titulo">
+    <form method="dialog" class="cat-pedido-fechar"><button aria-label="Fechar">×</button></form>
+    <h2 id="cat-pedido-titulo">Seu pedido</h2>
+    <p class="cat-pedido-vazio" data-pedido-vazio>Você ainda não escolheu nenhum título.</p>
+    <ul class="cat-pedido-lista" data-pedido-lista></ul>
+    <dl class="cat-totais" data-totais hidden>
+      <div><dt>Unidades</dt><dd data-total-unidades>0</dd></div>
+      <div><dt>Total de repasse</dt><dd data-total-repasse>R$ 0,00</dd></div>
+      <div><dt>Venda sugerida</dt><dd data-total-venda>R$ 0,00</dd></div>
+      <div><dt>Margem bruta da loja</dt><dd data-total-margem>0%</dd></div>
+    </dl>
+    <p class="cat-nota" data-pedido-nota hidden>A margem bruta não desconta despesas, perdas nem tributos aplicáveis.</p>
+
+    <form class="cat-contato" data-contato novalidate>
+      <label>Seu nome<input name="nome" required autocomplete="name"></label>
+      <label>Loja ou empresa<input name="loja" autocomplete="organization"></label>
+      <label>Telefone com DDD<input name="telefone" type="tel" required autocomplete="tel" inputmode="tel"></label>
+      <label>E-mail (opcional)<input name="email" type="email" autocomplete="email"></label>
+      <p class="cat-erro" data-erro hidden></p>
+      <div class="cat-acoes">
+        <button type="submit" class="cat-botao">Enviar pedido pelo WhatsApp</button>
+        <button type="button" class="cat-botao cat-botao-sec" data-imprimir>Salvar em PDF</button>
+        <button type="button" class="cat-botao cat-botao-sec" data-sugerido hidden>Montar pedido sugerido</button>
+        <button type="button" class="cat-link" data-limpar>Limpar pedido</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="/catalogo.js?v={{ASSET_VERSION}}" defer></script>
+</body>
+</html>

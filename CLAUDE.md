@@ -16,6 +16,15 @@ CTA único: **"Quero contar minha história"** (e variações) abre um modal com
 
 `/bio` ([bio.html](bio.html)) é o cartão de visita digital (link do Instagram `@revolute_editora`), com WhatsApp, telefone, site, e-mail e Instagram. Fica fora do sitemap de propósito.
 
+## Catálogo de torres de livros (B2B)
+Página `/catalogo` e `/catalogo/<cliente>` (ex.: `/catalogo/mairinque`): o comprador monta o pedido (mínimo de 10 un. por título), vê repasse, venda sugerida, margem da loja, código de barras EAN-13, NCM e CFOP. O envio abre o WhatsApp com o pedido e manda cópia por e-mail em `POST /api/pedido-catalogo`.
+- **Preço nunca vem do navegador:** o servidor recalcula tudo em [catalogo-pedido.js](catalogo-pedido.js) a partir de `catalogo-dados.json` (testes em `catalogo-pedido.test.js`).
+- **Público × interno:** `catalogo-dados.json` e as imagens de `Assets/Catalogo/` são públicos (a raiz inteira é servida como estática). Custo e fornecedor ficam só na planilha interna e **nunca** podem entrar neste repo.
+- **Regra de preço:** repasse da proposta (R$ 4,99 / 9,99 / 15,00 / 19,99 / 25,99; *Quatro Caras* R$ 29,90); título novo entra no menor ponto de venda (R$ 9,90, 14,90, 19,90…) em que a loja fica com ~50% e a Revolute com pelo menos 25% do repasse.
+- `catalogo-clientes.json`: nome e pedido sugerido por cliente (Mairinque = R$ 20.000). Sem `noindex` seria vitrine de atacado: manter `noindex` (meta, cabeçalho e robots.txt) e fora do sitemap.
+- A capa de *Quatro Caras Entram em um Bar* só se revela em 04/12/2026: o catálogo usa um cartão neutro, não a arte.
+- NCM só aparece quando o fornecedor informou (páginas do Auge); senão a tela mostra "a confirmar". CFOP 5.102 (revenda dentro de SP) está a confirmar com a contabilidade. Livro é imune; brinquedo paga imposto e exige selo do Inmetro.
+
 ## Stack
 - Node ≥18 + Express 4 ([server.js](server.js)) e Nodemailer. Sem banco, sem build, sem framework front: HTML, CSS e JS puros.
 - `index.html` e `bio.html` são **templates** lidos na subida do servidor. Placeholders: `{{SITE_URL}}`, `{{ROBOTS_CONTENT}}`, `{{ASSET_VERSION}}`. Abrir o HTML direto no navegador quebra canonical/OG/cache-busting, então sempre rode pelo servidor.

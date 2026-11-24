@@ -6,6 +6,7 @@ const express = require('express');
 const nodemailer = require('nodemailer');
 
 const { montarEventoLead, enviarEvento } = require('./meta');
+const { carregarCatalogo, validarPedido, textoDoPedido } = require('./catalogo-pedido');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -37,6 +38,7 @@ app.use((req, res, next) => {
 const indexTemplate = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
 const bioTemplate = fs.readFileSync(path.join(__dirname, 'bio.html'), 'utf8');
 const privacidadeTemplate = fs.readFileSync(path.join(__dirname, 'privacidade.html'), 'utf8');
+const catalogoTemplate = fs.readFileSync(path.join(__dirname, 'catalogo.html'), 'utf8');
 
 // Muda a cada deploy (o processo reinicia no Railway), então vira query
 // string nos links de CSS/JS (?v=...) — invalida cache da Cloudflare e do
@@ -110,11 +112,18 @@ app.get(['/privacidade', '/privacidade.html'], (req, res) => {
   res.type('html').send(renderTemplate(privacidadeTemplate, req));
 });
 
+// Catálogo de torres de livros (B2B, com preço de repasse): só quem recebe o link. Fora do sitemap e com noindex em
+// três camadas (meta, cabeçalho e robots.txt).
+app.get(['/catalogo', '/catalogo.html', '/catalogo/:cliente'], (req, res) => {
+  res.set('X-Robots-Tag', 'noindex, nofollow');
+  res.type('html').send(renderTemplate(catalogoTemplate, req));
+});
+
 app.get('/robots.txt', (req, res) => {
   const siteUrl = `${req.protocol}://${req.get('host')}`;
   const body = isTemporaryHost(req.hostname)
     ? 'User-agent: *\nDisallow: /\n'
-    : `User-agent: *\nAllow: /\n\nSitemap: ${siteUrl}/sitemap.xml\n`;
+    : `User-agent: *\nAllow: /\nDisallow: /catalogo\n\nSitemap: ${siteUrl}/sitemap.xml\n`;
   res.type('text/plain').send(body);
 });
 
@@ -190,6 +199,61 @@ app.post('/api/contato', async (req, res) => {
     return;
   }
   res.json({ ok: true, email: email_.ok, meta: meta.ok });
+});
+
+// Pedido do catálogo: o navegador manda ids e quantidades; preço, nome e total são recalculados aqui. O WhatsApp é o
+// canal principal e já foi aberto pelo navegador; esta rota confere o pedido e manda a cópia por e-mail.
+let catalogo = null;
+try {
+  catalogo = carregarCatalogo();
+} catch (error) {
+  console.error('[catalogo] catalogo-dados.json ou catalogo-clientes.json inválido — pedidos do catálogo desativados:', error.message);
+}
+const pedidosPorIp = new Map();
+const LIMITE_PEDIDOS_POR_HORA = 20;
+
+function dentroDoLimite(ip) {
+  const agora = Date.now();
+  const recentes = (pedidosPorIp.get(ip) || []).filter((momento) => agora - momento < 3600 * 1000);
+  recentes.push(agora);
+  pedidosPorIp.set(ip, recentes);
+  return recentes.length <= LIMITE_PEDIDOS_POR_HORA;
+}
+
+app.post('/api/pedido-catalogo', async (req, res) => {
+  if (!catalogo) {
+    res.status(503).json({ ok: false, error: 'Catálogo indisponível.' });
+    return;
+  }
+  if (!dentroDoLimite(req.get('cf-connecting-ip') || req.ip)) {
+    res.status(429).json({ ok: false, error: 'Muitos pedidos em pouco tempo. Tente de novo mais tarde.' });
+    return;
+  }
+  const pedido = validarPedido(req.body, catalogo);
+  if (!pedido.ok) {
+    res.status(400).json({ ok: false, error: pedido.erro });
+    return;
+  }
+  const corpo = textoDoPedido(pedido, catalogo);
+  if (!mailerReady) {
+    console.warn('[catalogo] pedido válido recebido, mas o e-mail não está configurado');
+    res.json({ ok: true, email: false, total: pedido.total });
+    return;
+  }
+  try {
+    await transporter.sendMail({
+      from: `"Catálogo Torres de Livros" <${SMTP_USER}>`,
+      to: MAIL_TO,
+      cc: MAIL_CC.length ? MAIL_CC : undefined,
+      replyTo: pedido.contato.email || undefined,
+      subject: `Pedido do catálogo — ${pedido.contato.loja || pedido.contato.nome} (${pedido.unidades} un.)`,
+      text: corpo,
+    });
+    res.json({ ok: true, email: true, total: pedido.total });
+  } catch (error) {
+    console.error('[catalogo] falha ao enviar e-mail do pedido:', error);
+    res.status(502).json({ ok: false, error: 'Não foi possível registrar o pedido por e-mail.' });
+  }
 });
 
 async function enviarEmail({ nome, email, telefone, origem }) {
